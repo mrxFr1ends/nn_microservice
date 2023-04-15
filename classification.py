@@ -52,7 +52,6 @@ from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.neural_network import MLPClassifier
 
 from sklearn.utils import all_estimators
-import inspect
 
 algorithms = None
 
@@ -64,7 +63,7 @@ def get_algorithms():
   algorithms = [class_.__name__ for _, class_ in estimators]
   return algorithms
 
-def create(model_name, params):
+def get_hyperparams(model_name):
   _class = globals()[model_name]
   hyperparams = _class._get_param_names()
   count_params = len(hyperparams)
@@ -79,7 +78,10 @@ def create(model_name, params):
     if iter == count_params:
       break
   # [print(f'{k}\n╚══ {v}\n') for k, v in params_info.items()]
-  return _class(**params), params_info
+  return params_info
+
+def create(model_name, params):
+  return globals()[model_name](**params)
 
 def train(model, X, y):
   clf = model.fit(X, y)
@@ -89,6 +91,6 @@ def train(model, X, y):
 def predict(model, X):
   predict_y = model.predict(X).tolist()
   predict_proba = model.predict_proba(X).tolist() if hasattr(model, 'predict_proba') else None
-  return [predict_y, predict_proba]
+  return predict_y, predict_proba
 
 # algorithms = ['AdaBoostClassifier', 'BaggingClassifier', 'BernoulliNB', 'CalibratedClassifierCV', 'CategoricalNB', 'ClassifierChain', 'ComplementNB', 'DecisionTreeClassifier', 'DummyClassifier', 'ExtraTreeClassifier', 'ExtraTreesClassifier', 'GaussianNB', 'GaussianProcessClassifier', 'GradientBoostingClassifier', 'HistGradientBoostingClassifier', 'KNeighborsClassifier', 'LabelPropagation', 'LabelSpreading', 'LinearDiscriminantAnalysis', 'LinearSVC', 'LogisticRegression', 'LogisticRegressionCV', 'MLPClassifier', 'MultiOutputClassifier', 'MultinomialNB', 'NearestCentroid', 'NuSVC', 'OneVsOneClassifier', 'OneVsRestClassifier', 'OutputCodeClassifier', 'PassiveAggressiveClassifier', 'Perceptron', 'QuadraticDiscriminantAnalysis', 'RadiusNeighborsClassifier', 'RandomForestClassifier', 'RidgeClassifier', 'RidgeClassifierCV', 'SGDClassifier', 'SVC', 'StackingClassifier', 'VotingClassifier']
