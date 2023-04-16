@@ -4,7 +4,8 @@ import json
 
 class RabbitService:
   def __init__(self):
-    connection_parameters = pika.ConnectionParameters(cfg.RABBIT_HOST)
+    credentials = pika.PlainCredentials(cfg.RABBIT_USER, cfg.RABBIT_PASSWORD)
+    connection_parameters = pika.ConnectionParameters(host=cfg.RABBIT_HOST, port=cfg.RABBIT_PORT, credentials=credentials)
     self.connection = pika.BlockingConnection(connection_parameters)
     self.channel = self.connection.channel()
     self.channel.queue_declare(queue=cfg.MAIN_TOPIC)

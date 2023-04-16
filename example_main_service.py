@@ -4,7 +4,8 @@ import json
 import pickle
 from sklearn.ensemble import RandomForestClassifier
 
-connection_parameters = pika.ConnectionParameters(cfg.RABBIT_HOST)
+credentials = pika.PlainCredentials(cfg.RABBIT_USER, cfg.RABBIT_PASSWORD)
+connection_parameters = pika.ConnectionParameters(host='127.0.0.1', port=cfg.RABBIT_PORT, credentials=credentials)
 connection = pika.BlockingConnection(connection_parameters)
 channel = connection.channel()
 
@@ -58,6 +59,6 @@ channel.basic_consume(queue=cfg.MAIN_TOPIC, auto_ack=True, on_message_callback=o
 
 print("Starting Consuming")
 
-# channel.start_consuming()
+channel.start_consuming()
 
 connection.close()
