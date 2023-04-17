@@ -1,26 +1,28 @@
 version: "3.8"
+name: sklearn_provider_container
 
 services:
+
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     depends_on:
       rabbit_mq:
         condition: service_healthy
-        
+
   rabbit_mq:
     image: rabbitmq:3.11.13-management
     container_name: rabbit_mq
     ports:
-        - '5672:5672'
-        - '15672:15672'
-    environment:
-      AMQP_URL: 'amqp://rabbit_mq?connection_attempts=10&retry_delay=10'
-      RABBITMQ_DEFAULT_USER: "guest"
-      RABBITMQ_DEFAULT_PASS: "guest"
+      - "5672:5672"
+      - "15672:15672"
     healthcheck:
-        test: [ "CMD", "rabbitmqctl", "status"]
-        interval: 5s
-        timeout: 20s
-        retries: 5
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 20s
+      retries: 5
+
+networks:
+  default:
+    name: sklearn_provider_network
