@@ -1,21 +1,20 @@
 import pika
-from config import Rabbit, Provider, MainTopic
 import json
 
 
 class RabbitService:
-    def __init__(self):
-        credentials = pika.PlainCredentials(Rabbit.USER, Rabbit.PASSWORD)
+    def __init__(self, host, port, user, password):
+        credentials = pika.PlainCredentials(user, password)
         connection_parameters = pika.ConnectionParameters(
-            host=Rabbit.HOST, port=Rabbit.PORT, credentials=credentials)
+            host=host, port=port, credentials=credentials)
         self.connection = pika.BlockingConnection(connection_parameters)
         self.channel = self.connection.channel()
-        self.channel.queue_declare(queue=MainTopic.MAIN)
-        self.channel.queue_declare(queue=MainTopic.ERROR)
-        self.channel.queue_declare(queue=Provider.TOPIC_NAME)
 
     def __del__(self):
         self.connection.close()
+
+    def add_topic(self, topic_name):
+        self.channel.queue_declare(queue=topic_name)
 
     def send_message(self, topic_name, message):
         self.channel.basic_publish(
@@ -24,7 +23,7 @@ class RabbitService:
             body=json.dumps(message)
         )
 
-    def start_consuming(self, callback_func):
+    def start_consuming(self, topic_name, callback_func, auto_ack=False):
         self.channel.basic_consume(
-            queue=Provider.TOPIC_NAME, auto_ack=True, on_message_callback=callback_func)
+                queue=topic_name, auto_ack=auto_ack, on_message_callback=callback_func)
         self.channel.start_consuming()

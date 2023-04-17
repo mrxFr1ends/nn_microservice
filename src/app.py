@@ -3,10 +3,11 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 from datetime import datetime
 import json
-from config import Provider, MainTopic
+from config import *
+from request_handlers import create_model, train_model, model_predict
 from rabbit_service import RabbitService
 from classificator import Classificator
-from request_handlers import request_handler_map
+
 
 def register_provider():
     message = {
@@ -53,7 +54,26 @@ def handle_request(req, handler, res_status, required_keys):
     print(f"    [+] Response '{res_status}' was sent to '{MainTopic.MAIN}' topic")
 
 
-def on_message_received(ch, method, properties, request):
+request_handler_map = {
+    RequestStatus.CREATE: {
+        'handler': create_model,
+        'res_status': ResponseStatus.CREATED,
+        'required_keys': ['classifier', 'options']
+    },
+    RequestStatus.TRAIN: {
+        'handler': train_model,
+        'res_status': ResponseStatus.TRAINED,
+        'required_keys': ['model', 'features', 'labels']
+    },
+    RequestStatus.PREDICT: {
+        'handler': model_predict,
+        'res_status': ResponseStatus.PREDICTED,
+        'required_keys': ['model', 'features']
+    }
+}
+
+
+def on_message_received(channel, method, properties, request):
     print("[+] Received new message")
     if (req := try_deserialize_request(request)) is None:
         return
@@ -69,10 +89,14 @@ def on_message_received(ch, method, properties, request):
     except Exception as exp:
         print(f"    [x] {type(exp).__name__}: {exp}")
         send_error_message(req['modelId'], f"Status: '{model_label}'", exp)
+    channel.basic_ack(method.delivery_tag)
 
 
 if __name__ == '__main__':
-    service = RabbitService()
+    service = RabbitService(Rabbit.HOST, Rabbit.PORT, Rabbit.USER, Rabbit.PASSWORD)
+    service.add_topic(MainTopic.MAIN)
+    service.add_topic(MainTopic.ERROR)
+    service.add_topic(Provider.TOPIC_NAME)
     register_provider()
-    print("[*] Starting Consuming")
-    service.start_consuming(callback_func=on_message_received)
+    print(f"[*] Starting Consuming {Provider.TOPIC_NAME}")
+    service.start_consuming(Provider.TOPIC_NAME, callback_func=on_message_received)
