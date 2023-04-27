@@ -15,15 +15,21 @@ class RabbitService:
 
     def add_topic(self, topic_name):
         self.channel.queue_declare(queue=topic_name)
+        self.channel.queue_bind(topic_name, topic_name, topic_name)
+
+    def add_exchange(self, exchange_name, exchange_type):
+        self.channel.exchange_declare(
+            exchange=exchange_name,
+            exchange_type=exchange_type)
 
     def send_message(self, topic_name, message):
         self.channel.basic_publish(
-            exchange='',
+            exchange=topic_name,
             routing_key=topic_name,
             body=json.dumps(message)
         )
 
     def start_consuming(self, topic_name, callback_func, auto_ack=False):
         self.channel.basic_consume(
-                queue=topic_name, auto_ack=auto_ack, on_message_callback=callback_func)
+            queue=topic_name, auto_ack=auto_ack, on_message_callback=callback_func)
         self.channel.start_consuming()

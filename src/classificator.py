@@ -71,7 +71,6 @@ class Classificator:
         ]
         return model, metrics
 
-
     @staticmethod
     def predict(model, x):
         predict_y = model.predict(x).tolist()
